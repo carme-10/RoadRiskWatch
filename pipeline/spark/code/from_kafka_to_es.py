@@ -62,6 +62,11 @@ def is_mapping_present(es_index):
                 return False
 
         except requests.exceptions.RequestException as e:
+
+            if e is None:
+                print(f'Waiting for Elastic Search')
+                continue
+            
             #In case the index does not exist, the response will be 404
             if e.response.status_code == 404:
                 print(f"The index '{es_index}' does not exist")

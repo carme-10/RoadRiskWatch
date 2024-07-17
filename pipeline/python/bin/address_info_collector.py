@@ -367,13 +367,39 @@ if __name__ == '__main__':
         check_logstash()
         print('Logstash is up')
 
+        umidity_values = [30, 40, 60]
+        temperature_values = [-10, 20, 30]
+        weather_icons = ["01d", "02d", "03d", "04d", "09d", "10d", "11d", "13d", "50d",
+                             "01n", "02n", "03n", "04n", "09n", "10n", "11n", "13n", "50n"]
+        wind_speed_values = [1, 8]
+        pressure_values = [1010, 1020]          
+
+        indexes = [(i, j, k, l, m) 
+                            for i in range(0, len(umidity_values))
+                            for j in range(0, len(temperature_values))
+                            for k in range(0, len(weather_icons))
+                            for l in range(0, len(wind_speed_values))
+                            for m in range(0, len(pressure_values))]
+
         with open('../input_data/demo_mode/demo_input.jsonl', 'r') as file:
-            #to continue sending the data (even if the same)
-            while True:
+
+            for index_tuple in indexes:
                 for line in file:
-                    time.sleep(5)
+
+                    line_dict = json.loads(line)
+                    line_dict["weather_info"]["dt"] = int(time.time())
+
+                    line_dict["weather_info"]["main"]["humidity"] = umidity_values[index_tuple[0]]
+                    line_dict["weather_info"]["main"]["temp"] = temperature_values[index_tuple[1]]
+                    line_dict["weather_info"]["weather"][0]["icon"] = weather_icons[index_tuple[2]]
+                    line_dict["weather_info"]["wind"]["speed"] = wind_speed_values[index_tuple[3]]
+                    line_dict["weather_info"]["main"]["pressure"] = pressure_values[index_tuple[4]]
+                    
+                    line = json.dumps(line_dict)
+
                     send_to_logstash(line)
                 
+                time.sleep(5)
                 file.seek(0) #to read the file from the beginning
 
     elif execution_mode == 'Default':
