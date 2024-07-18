@@ -1,0 +1,43 @@
+version: '2'
+services:
+
+  sparkaggregations:
+    build: /spark
+    hostname: sparkaggregations
+    container_name: sparkaggregations
+    volumes:
+      - ./spark/code:/opt/tap/code/
+      - ./spark/input/:/opt/tap/input_data/
+      - ../../../project_dataset/:/opt/tap/project_dataset/ #change this line to the path of the project_dataset
+      - ./spark/output/:/opt/tap/output_data/
+    command: > 
+      /opt/spark/bin/spark-submit --conf spark.driver.extraJavaOptions="-Divy.cache.dir=/tmp -Divy.home=/tmp" /opt/tap/code/aggregate_traffic_accidents.py
+
+  transformation:
+    build: /python
+    hostname: transformation
+    container_name: transformation
+    environment: 
+      - PYTHON_APP=transformation.py
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./python/bin:/usr/src/app/bin
+      - ./spark/output:/usr/src/app/input_data
+      - ./python/output:/usr/src/app/output_data
+    depends_on:
+      sparkaggregations:
+        condition: service_completed_successfully
+
+  sparkmlib:
+    build: /spark
+    hostname: sparkmlib
+    container_name: sparkmlib
+    volumes:
+      - ./spark/code:/opt/tap/code/
+      - ./python/output:/opt/tap/input_data/
+      - ./spark/output:/opt/tap/output_data/
+    command: > 
+      /opt/spark/bin/spark-submit --conf spark.driver.extraJavaOptions="-Divy.cache.dir=/tmp -Divy.home=/tmp" /opt/tap/code/mlib.py
+    depends_on:
+      transformation:
+        condition: service_completed_successfully
