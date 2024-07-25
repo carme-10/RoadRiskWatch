@@ -8,6 +8,7 @@ from pyspark.ml.evaluation import RegressionEvaluator
 
 from pyspark.ml import Pipeline
 
+import time
 
 spark = SparkSession.builder \
     .appName("RandomForestRegressionModel") \
@@ -48,8 +49,14 @@ predictions = model.transform(df)
 evaluator = RegressionEvaluator(labelCol=label_column_name, predictionCol=predizione, metricName="rmse")
 rmse = evaluator.evaluate(predictions)
 
+timestamp = time.time()
+utc_time = time.gmtime(timestamp)
+readable_utc_time = time.strftime("%Y-%m-%d_%H-%M-%S_%Z", utc_time)
+
+model_path = f"/opt/tap/models/{readable_utc_time}/"
+
 print("Saving model...")
-model.write().overwrite().save("/opt/tap/output_data/models/RandomForestRegression")
+model.write().overwrite().save(model_path + "model/")
 print("Done.")
 
 # Extract the RandomForestRegressor model from the pipeline
@@ -60,7 +67,7 @@ feature_importances = rf_model.featureImportances
 min_pred = predictions.select(min(predizione)).first()[0]
 max_pred = predictions.select(max(predizione)).first()[0]
 
-with open('/opt/tap/output_data/model_info.txt', 'a') as file:
+with open(model_path + "model_info.txt", 'a') as file:
     
     file.write("min_pred: " + str(min_pred) + " max_pred: " + str(max_pred) + " rmse:" + str(rmse) + "\n")
     file.write("Feature importances:" + "\n")

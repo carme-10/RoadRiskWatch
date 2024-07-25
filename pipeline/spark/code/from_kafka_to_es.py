@@ -80,6 +80,8 @@ topic = "roads-topic"
 
 elastic_index="road_data"
 
+model_version = "2024-07-25_15-44-05_GMT"
+
 if not is_mapping_present(elastic_index):
     es_mapping(elastic_index)
 
@@ -93,7 +95,7 @@ spark = SparkSession.builder.appName("ReadFromKafkaAndWriteToES").config(conf=sp
 spark.sparkContext.setLogLevel("ERROR") 
 
 print("Loading model")
-model = PipelineModel.load("/opt/tap/models/RandomForestRegression")
+model = PipelineModel.load(f"/opt/tap/models/{model_version}/model/")
 print("Done")
 
 #user defined function to map the weather icon to a more readable string

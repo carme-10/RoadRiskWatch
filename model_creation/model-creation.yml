@@ -36,6 +36,7 @@ services:
       - ./spark/code:/opt/tap/code/
       - ./python/output:/opt/tap/input_data/
       - ./spark/output:/opt/tap/output_data/
+      - ../pipeline/spark/models:/opt/tap/models/
     command: > 
       /opt/spark/bin/spark-submit --conf spark.driver.extraJavaOptions="-Divy.cache.dir=/tmp -Divy.home=/tmp" /opt/tap/code/mlib.py
     depends_on:
