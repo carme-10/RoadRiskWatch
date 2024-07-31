@@ -6,19 +6,18 @@ from fuzzywuzzy import fuzz, process
 import time, copy
 import os
 
-#nel file addresses.txt bisogna inserire gli indirizzi da cercare.
-#ogni indirizzo deve essere scritto su una riga
-#nella forma:
-    #Via X, altro...
-    #cioè l'importante è che il nome sia scritto per prima e che sia seguita da una virgola,
-    #la quale deve essere per la prima volta presente in quel momento
 
-#get api key from file
-with open('../keys/TomTom_key.txt', 'r') as file:
-    tom_tom_api_key = file.read().strip()
+with open('../input_data/execution_mode.txt', 'r') as file:
+    execution_mode = file.read().strip()
 
-with open('../keys/OpenWeather_key.txt', 'r') as file:
-    open_weather_api_key = file.read().strip()
+if execution_mode == 'Default':
+
+    #get api key from file
+    with open('../keys/TomTom_key.txt', 'r') as file:
+        tom_tom_api_key = file.read().strip()
+
+    with open('../keys/OpenWeather_key.txt', 'r') as file:
+        open_weather_api_key = file.read().strip()
 
 #function to read input from a json file and call the api
 def get_addresses_info(file_name):
@@ -30,7 +29,13 @@ def get_addresses_info(file_name):
     
     for address in addresses:
 
-        result = api_calls(address.strip())
+        index = address.index('#')
+        input_way_name = address[:index].strip()
+        way_details = address[index+1:].strip()
+
+        address = input_way_name + ", " + way_details
+
+        result = api_calls(address)
 
         if result is None:
             print(f"Error, address: '{address}' info not added")
@@ -40,9 +45,6 @@ def get_addresses_info(file_name):
             if len(result['elements']) == 0:
                 print('No elements found', address)
                 continue
-
-            index = address.index(',')
-            input_way_name = address[:index]
 
             result_filtered = json_filter(result, input_way_name)
 
@@ -143,7 +145,7 @@ def json_filter(input_json, way_name):
     
     best_match = process.extract(way_name, id_name_dict, scorer=fuzz.token_sort_ratio, limit=100) #get a list with tuples (match, score, match key)
 
-    best_match_filtered = [el for el in best_match if el[1] >= 80]
+    best_match_filtered = [el for el in best_match if el[1] >= 70]
     
     if best_match_filtered == []:
         return None
@@ -287,7 +289,7 @@ def add_nodes_info(addresses_info):
             #add an element to the list nodes_info
             data['nodes_info'].append(result)
 
-            time.sleep(1)
+            #time.sleep(1)
 
             if result is None:
                 exit(1)
@@ -359,8 +361,6 @@ def send_to_logstash(json_string):
 
 if __name__ == '__main__':
 
-    execution_mode = os.getenv('MY_MODE_VAR', 'Default') 
-
     if execution_mode == 'Demo':
         print('Demo mode')
 
@@ -414,6 +414,7 @@ if __name__ == '__main__':
         check_logstash()
         print('Logstash is up')
 
+        weather_update_sec = 600
         while True:
 
             output = insert_weather(addresses_info)
@@ -427,7 +428,7 @@ if __name__ == '__main__':
 
                 send_to_logstash(json_string)
             
-            time.sleep(30)
+            time.sleep(weather_update_sec)
         
     else:
         print('Unknown mode')

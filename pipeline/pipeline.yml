@@ -1,5 +1,4 @@
-#docker-compose -f docker-compose.yml up --build
-  #I have to execute this command in the folder where the docker-compose.yml file is located
+#docker-compose -f pipeline.yml up --build
 
 version: '2'
 services:
@@ -69,7 +68,6 @@ services:
       environment: 
         - PYTHON_APP=address_info_collector.py
         - PYTHONUNBUFFERED=1
-        - MY_MODE_VAR=Demo
       volumes:
         - ./python/bin:/usr/src/app/bin
         - ./python/keys:/usr/src/app/keys
@@ -100,5 +98,5 @@ services:
     volumes:
       - ./kibana/kibana.yml:/usr/share/kibana/config/kibana.yml
     depends_on:
-        kafka-topics:
-          condition: service_completed_successfully
+      kafka-topics:
+        condition: service_completed_successfully
